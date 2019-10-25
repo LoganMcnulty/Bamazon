@@ -1,6 +1,8 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var Table = require('cli-table');
 
+// --- GIT HUB MYSQL PASSWORD PROTECTION PROMPT ---
 inquirer.prompt([
     {
         type: "password",
@@ -9,6 +11,7 @@ inquirer.prompt([
     }
     ]).then(function(user) {
 
+// CONNECT TO SQL DB
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -29,6 +32,7 @@ connection.connect(function(err) {
     launchBamazon();
 });
 
+// --- LAUNCH FUNCTION --- 
 function launchBamazon(){
     inquirer.prompt([
         {
@@ -50,6 +54,7 @@ function launchBamazon(){
       })
 };
 
+//--- VIEW INVENTORY FUNCTIONS ---
 function showItemsByDepartment(){
     connection.query("SELECT department_name FROM products GROUP BY department_name", function(err, res){
         if (err) throw err;
@@ -74,10 +79,19 @@ function showItemsForSelectedDepartment(departmentPass) {
     connection.query(`SELECT * FROM products WHERE department_name = "${departmentPass}"`, function(err, res) {
         if (err) throw err;
         console.log(`\n---Here's a list of availale products and their prices from the ${departmentPass} Department---\n`)
+
+        var table = new Table({
+            head: ['Product','Price', 'ItemID']
+          , colWidths: [30, 10, 10]
+        });
+
         for (i = 0; i < res.length; i++){
-            item = (`Item: ${res[i].product_name}, Price: ${res[i].price}, ItemID: ${res[i].id}`)
-            console.log(`${item}\n `)
+            let itemArray=[];
+            itemArray.push(res[i].product_name, res[i].price, res[i].id);
+            table.push(itemArray);
         }
+        console.log(table.toString())
+
         inquirer.prompt([
             {
                 type: "input",
@@ -143,55 +157,17 @@ function newOrder(itemID, itemQuantity, stockQuantity, totalPriceToConsumer){
     var query = connection.query("UPDATE products SET ? WHERE ?",
     [{
         stock_quantity: stockQuantity - itemQuantity,
+        product_sales: totalPriceToConsumer,
     },
     {
         id: itemID
-    }]
+    }
+    ]
     , function (err, res){
         if (err) throw err;
         console.log(`---${query.sql}---`);
         endConnection();
     });
-    // console.log(itemQuantity)
-    // inquirer.prompt([
-    //     {
-    //         type: "input",
-    //         name: "bidderName",
-    //         message: "What is your name?"
-    //     },
-    //     {
-    //         type: "input",
-    //         name: "newBidID",
-    //         message: "What would you like to bid on? (Please enter ItemID)"
-    //     },
-    //     {
-    //         type: "input",
-    //         name: "newBidPrice",
-    //         message: "What is your bid?"
-    //     },
-    //     ]).then(function(user) {
-    //         if (user.newBidPrice.charAt(0) === "$"){
-    //             fixedBid = user.newBidPrice.substring(1,100);
-    //             fixedBid = parseInt(fixedBid, 10);
-    //             fixedID = parseInt(user.newBidID, 10);
-    //         }
-    //         else{
-    //             fixedBid = parseInt(user.newBidPrice, 10);
-    //             fixedID = parseInt(user.newBidID, 10);
-    //         }
-    //         userSelectionID = fixedID;
-    //         userBid = fixedBid;
-    //         compareID = fixedID - 1;
-
-    //         if (userBid < responseData[compareID].price){
-    //             console.log(`Sorry ${user.bidderName}, your bid needs to be higher than the current price!`)
-    //             endConnection();
-    //         }
-    //         else{
-    //             console.log(`Congrats ${user.bidderName}, you are now the highest bidder!`);
-    //             updateProductWithOrder(user);
-    //         }
-    //     });
 }
 
 function endConnection(){

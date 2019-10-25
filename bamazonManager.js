@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var Table = require('cli-table');
 
 // --- GIT HUB MYSQL PASSWORD PROTECTION PROMPT ---
 inquirer.prompt([
@@ -31,8 +32,6 @@ inquirer.prompt([
         launchBamazonManager();
     });
 
-
-
 // --- LAUNCH FUNCTION --- 
 function launchBamazonManager(){
     inquirer.prompt([
@@ -57,8 +56,6 @@ function launchBamazonManager(){
           }
       })
 };
-
-
 
 //--- VIEW INVENTORY FUNCTIONS ---
     function showItemsByDepartment(){
@@ -85,11 +82,19 @@ function launchBamazonManager(){
     function showItemsForSelectedDepartment(departmentPass) {
         connection.query(`SELECT * FROM products WHERE department_name = "${departmentPass}"`, function(err, res) {
             if (err) throw err;
+
+            var table = new Table({
+                head: ['Product','Inventory', 'ItemID']
+              , colWidths: [30, 15, 10]
+            });
+
             console.log(`\n---Inventory from the ${departmentPass} Department---\n`)
             for (i = 0; i < res.length; i++){
-                item = (`Item: ${res[i].product_name}, Inventory: ${res[i].stock_quantity}, ItemID: ${res[i].id}`)
-                console.log(`${item}\n `)
+                let itemArray=[];
+                itemArray.push(res[i].product_name, res[i].stock_quantity, res[i].id);
+                table.push(itemArray);
             }
+            console.log(table.toString())
             endConnection();
         });
     };
@@ -160,15 +165,24 @@ function launchBamazonManager(){
 
 //---VIEW LOW INVENTORY FUNCTIONS ---
     function viewLowInventory() {
-        connection.query("SELECT id, stock_quantity, id, product_name FROM products", function(err, res){
+        connection.query("SELECT * FROM products", function(err, res){
             if (err) throw err;
             console.log(`\n--- Displaying products with low inventories (less than 5 in stock) ---`)
+
+            var table = new Table({
+                head: ['Product','Inventory', 'Department', 'ItemID']
+              , colWidths: [30, 15, 20, 10]
+            });
+
             for (i = 0; i < res.length; i++){
                 if (res[i].stock_quantity < 5){
-                    console.log(`\n${res[i].product_name}(s): ${res[i].stock_quantity} Item ID: ${res[i].id}\n`)
+                    let itemArray = [];
+                    itemArray.push(res[i].product_name, res[i].stock_quantity, res[i].department_name, res[i].id)
+                    table.push(itemArray);
                 }
             }
-            endConnection();
+            console.log(table.toString())
+        endConnection();
     })
     }
 
@@ -252,3 +266,5 @@ function launchBamazonManager(){
         })
     }
 })
+
+// module.exports = manager;
