@@ -14,7 +14,7 @@
 - node bamazonSupervisor
 
 **Link to Video Demo**
-https://drive.google.com/open?id=13Bi_1I5-DxavFG4RTAYeLHwPT8LYJ1jB
+https://drive.google.com/file/d/10_JNG3dXNsgOYQG7PX94tuWAWToQEO_4/view?usp=sharing
 
 **Purpose of this app**
 - This app was fundamental in solidifying the programmer's (myself, Logan McNulty) knowledge of querying MySql databases using command line applications, and also querying and managing SQL databases using MySQL Workbench. 
