@@ -1,6 +1,7 @@
-var mysql = require("mysql");
-var inquirer = require("inquirer");
-var Table = require('cli-table');
+// Require NPMs 
+    var mysql = require("mysql");
+    var inquirer = require("inquirer");
+    var Table = require('cli-table');
 
 // --- GIT HUB MYSQL PASSWORD PROTECTION PROMPT ---
 inquirer.prompt([
@@ -33,29 +34,29 @@ inquirer.prompt([
     });
 
 // --- LAUNCH FUNCTION --- 
-function launchBamazonManager(){
-    inquirer.prompt([
-        {
-          type: "list",
-          name: "task",
-          message: "\nSelect the desired managerial task",
-          choices: ["View Products for Sale", "Add To Inventory", "View Low Inventory", "Add a New Product"]
-        },
-      ]).then(function(user) {
-          if (user.task === "View Products for Sale"){
-            showItemsByDepartment()
-          }
-          else if (user.task === "Add To Inventory"){
-            addToInventory();
-          }
-          else if (user.task === "View Low Inventory"){
-            viewLowInventory();
-          }
-          else {
-            addItem();
-          }
-      })
-};
+    function launchBamazonManager(){
+        inquirer.prompt([
+            {
+            type: "list",
+            name: "task",
+            message: "\nSelect the desired managerial task",
+            choices: ["View Products for Sale", "Add To Inventory", "View Low Inventory", "Add a New Product"]
+            },
+        ]).then(function(user) {
+            if (user.task === "View Products for Sale"){
+                showItemsByDepartment()
+            }
+            else if (user.task === "Add To Inventory"){
+                addToInventory();
+            }
+            else if (user.task === "View Low Inventory"){
+                viewLowInventory();
+            }
+            else {
+                addItem();
+            }
+        })
+    };
 
 //--- VIEW INVENTORY FUNCTIONS ---
     function showItemsByDepartment(){
@@ -117,11 +118,12 @@ function launchBamazonManager(){
                 ]).then(function(user) {
                     selectedItemID = parseInt(user.selectedItemID);
                     selectedItemQuantity = parseInt(user.selectedItemQuantity);
-
-                if((isNaN(selectedItemID)) && (isNaN(selectedItemID))){
+            // catch for numbers only 
+                if((isNaN(selectedItemID)) || (isNaN(selectedItemQuantity))){
                     console.log("\n---Please make valid numerical entries and try again!---");
                     endConnection();
                 }
+            // verifying id 
                 else { 
                     console.log("\n---Verifying ID provided---")
                     let validIDs = [];
@@ -200,19 +202,22 @@ function launchBamazonManager(){
     };
 
     function showDepartments(newItemPass){
-        connection.query("SELECT department_name FROM products GROUP BY department_name", function(err, res){
+        connection.query("SELECT department_name FROM departments", function(err, res){
             if (err) throw err;
             console.log("\n---Existing Deparments---\n")
+            let departmentArray = [];
             for (i = 0; i < res.length; i++){
+                departmentArray.push(res[i].department_name)
                 console.log(`${res[i].department_name}`);
             }
             console.log();
-            addItemPt2(newItemPass);
+            addItemPt2(newItemPass, departmentArray);
         }
         )
     }
 
-    function addItemPt2(newItemPass){
+    function addItemPt2(newItemPass, departmentArray){
+        var departmentArray = departmentArray
         inquirer.prompt([
         {
             type: "input",
@@ -238,13 +243,43 @@ function launchBamazonManager(){
                     department_name: department,
                     price: user.startPrice,
                     stock_quantity: user.itemStock
-                }
+                },
             )
-            console.log(`\n---Success. ${user.itemStock} ${newItemPass}(s) added to the ${user.itemDepartment} department!---`)
-            endConnection();
+
+            console.log(`\n---Success, ${user.itemStock} ${newItemPass}(s)  added to the ${department} department!---`)
+
+            if (!departmentArray.includes(user.itemDepartment))
+            {
+                updateDepartments(user.itemDepartment, user.itemStock, newItemPass);
+            }
+            else{
+                endConnection();
+            }
         });
     }
 
+    function updateDepartments(newDepartment, newItemStock, newItemPass) {
+        inquirer.prompt([
+            {
+                type: "input",
+                name: "newDepartmentCost",
+                message: (`What are the overhead costs for the new ${newDepartment} department?`)
+            },
+        ]).then(function(user){
+            connection.query(
+                "INSERT INTO departments SET ?",
+                {
+                    department_name: newDepartment,
+                    over_head_costs: user.newDepartmentCost,
+                },
+            )
+            console.log(`\n---Success, new ${newDepartment} department added!---`)
+            console.log(`\n---Success, ${newItemStock} ${newItemPass}(s) added to the ${newDepartment} department!---`)
+            endConnection();
+        })
+    }
+
+// --- END CONNECTION FUNCTION ---
     function endConnection(){
         inquirer.prompt([
             {
@@ -266,5 +301,3 @@ function launchBamazonManager(){
         })
     }
 })
-
-// module.exports = manager;
